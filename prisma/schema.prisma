@@ -1,0 +1,333 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============== AUTH & ROLE (Level 1) ==============
+
+enum RoleName {
+  ADMIN
+  SELLER
+  BUYER
+  DRIVER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  password     String // bcrypt hash
+  name         String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles        UserRole[]
+
+  store        Store?
+  wallet       Wallet?
+  addresses    Address[]
+  carts        Cart[]
+  ordersAsBuyer Order[]   @relation("BuyerOrders")
+  driverProfile DriverProfile?
+  reviews      AppReview[]
+
+  @@map("users")
+}
+
+// One username can own multiple non-admin roles at once (Buyer+Seller+Driver).
+// Admin is treated as a separate, single-role account by convention (documented in README).
+model UserRole {
+  id     String   @id @default(cuid())
+  userId String
+  role   RoleName
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+// ============== SELLER (Level 2) ==============
+
+model Store {
+  id          String   @id @default(cuid())
+  ownerId     String   @unique
+  owner       User     @relation(fields: [ownerId], references: [id])
+  name        String   @unique
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+
+  products    Product[]
+  orders      Order[]
+
+  @@map("stores")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+  name        String
+  description String?
+  price       Int // in Rupiah, smallest unit
+  stock       Int      @default(0)
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+// ============== BUYER: WALLET, ADDRESS, CART (Level 3) ==============
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  balance   Int      @default(0)
+
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+enum WalletTxType {
+  TOPUP
+  CHECKOUT_PAYMENT
+  REFUND
+}
+
+model WalletTransaction {
+  id        String       @id @default(cuid())
+  walletId  String
+  wallet    Wallet       @relation(fields: [walletId], references: [id])
+  type      WalletTxType
+  amount    Int // positive for credit, negative for debit
+  note      String?
+  orderId   String?
+  createdAt DateTime     @default(now())
+
+  @@map("wallet_transactions")
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  label     String
+  recipient String
+  phone     String
+  fullAddress String
+  city      String
+  isDefault Boolean @default(false)
+
+  orders    Order[]
+
+  @@map("addresses")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  buyerId   String
+  buyer     User       @relation(fields: [buyerId], references: [id])
+  storeId   String?    // single-store checkout rule: null when empty, locked to one store once an item is added
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ============== DISCOUNTS (Level 4) ==============
+
+model Voucher {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  description   String?
+  discountType  DiscountType
+  discountValue Int // percentage (0-100) or flat rupiah depending on discountType
+  maxDiscount   Int? // cap for percentage vouchers
+  expiresAt     DateTime
+  usageLimit    Int
+  usedCount     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  orders        Order[]
+
+  @@map("vouchers")
+}
+
+model Promo {
+  id            String   @id @default(cuid())
+  name          String
+  discountType  DiscountType
+  discountValue Int
+  maxDiscount   Int?
+  expiresAt     DateTime
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  orders        Order[]
+
+  @@map("promos")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+// ============== ORDERS (Level 3-6) ==============
+
+enum DeliveryMethod {
+  INSTANT
+  NEXT_DAY
+  REGULAR
+}
+
+enum OrderStatus {
+  SEDANG_DIKEMAS      // Seller is packing
+  MENUNGGU_PENGIRIM   // Ready for driver pickup
+  SEDANG_DIKIRIM      // Driver delivering
+  PESANAN_SELESAI     // Completed
+  DIKEMBALIKAN        // Returned/refunded (overdue)
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  buyerId         String
+  buyer           User           @relation("BuyerOrders", fields: [buyerId], references: [id])
+  storeId         String
+  store           Store          @relation(fields: [storeId], references: [id])
+  addressId       String
+  address         Address        @relation(fields: [addressId], references: [id])
+
+  deliveryMethod  DeliveryMethod
+  status          OrderStatus    @default(SEDANG_DIKEMAS)
+
+  subtotal        Int
+  discountAmount  Int            @default(0)
+  deliveryFee     Int
+  ppn             Int // 12% of (subtotal - discount + deliveryFee), documented in README
+  total           Int
+
+  voucherId       String?
+  voucher         Voucher?       @relation(fields: [voucherId], references: [id])
+  promoId         String?
+  promo           Promo?         @relation(fields: [promoId], references: [id])
+
+  sellerIncomeReversed Boolean   @default(false) // prevents double income reversal
+  stockRestored        Boolean  @default(false) // prevents double stock restoration
+  refunded             Boolean  @default(false) // prevents double refund
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  delivery        Delivery?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  priceEach Int // snapshot price at time of order
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@map("order_status_history")
+}
+
+// ============== DELIVERY / DRIVER (Level 5) ==============
+
+model DriverProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  totalEarning Int     @default(0)
+
+  deliveries  Delivery[]
+
+  @@map("driver_profiles")
+}
+
+enum DeliveryStatus {
+  WAITING_DRIVER  // mirrors order MENUNGGU_PENGIRIM
+  ON_DELIVERY     // mirrors order SEDANG_DIKIRIM
+  COMPLETED       // mirrors order PESANAN_SELESAI
+}
+
+model Delivery {
+  id          String         @id @default(cuid())
+  orderId     String         @unique
+  order       Order          @relation(fields: [orderId], references: [id])
+  driverId    String?
+  driver      DriverProfile? @relation(fields: [driverId], references: [id])
+  status      DeliveryStatus @default(WAITING_DRIVER)
+  earning     Int // computed from deliveryFee, see README rule
+  takenAt     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@map("deliveries")
+}
+
+// ============== PUBLIC APP REVIEW (Level 1) ==============
+
+model AppReview {
+  id        String   @id @default(cuid())
+  userId    String?  // nullable: guests may submit without an account
+  user      User?    @relation(fields: [userId], references: [id])
+  name      String // display name (guest-provided or pulled from user)
+  rating    Int // 1-5, validated in app layer
+  comment   String // sanitized before render
+  createdAt DateTime @default(now())
+
+  @@map("app_reviews")
+}
+
+// ============== SIMULATED CLOCK (Level 6, for overdue/next-day simulation) ==============
+
+model SystemClock {
+  id          String   @id @default("singleton")
+  offsetMs    BigInt   @default(0) // added to real time to simulate "now"
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_clock")
+}
