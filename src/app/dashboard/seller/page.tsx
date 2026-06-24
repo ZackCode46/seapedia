@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, getActiveRole } from "@/lib/auth";
 import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 
 export default async function SellerDashboard() {
   const user = await getCurrentUser();
@@ -11,11 +13,19 @@ export default async function SellerDashboard() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Dashboard Seller</h1>
-      <p className="text-sm text-slate-500">
-        Role aktif: <span className="font-medium text-emerald-700">{activeRole}</span> ·
-        Semua role yang kamu miliki: {user.roles.map((r) => r.role).join(", ")}
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Dashboard Seller</h1>
+          <p className="text-sm text-slate-500">
+            Role aktif: <span className="font-medium text-emerald-700">{activeRole}</span> ·
+            Semua role yang kamu miliki: {user.roles.map((r) => r.role).join(", ")}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/dashboard/seller/store"><Button variant="outline">Kelola Toko</Button></Link>
+          <Link href="/dashboard/seller/products"><Button>Kelola Produk</Button></Link>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Card>
@@ -23,9 +33,11 @@ export default async function SellerDashboard() {
           <p className="mt-1 text-lg font-semibold text-slate-800">
             {user.store ? user.store.name : "Belum membuat toko"}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Pembuatan toko &amp; manajemen produk tersedia di Level 2.
-          </p>
+          {!user.store && (
+            <Link href="/dashboard/seller/store" className="mt-2 inline-block text-sm text-emerald-700 hover:underline">
+              Buat toko sekarang &rarr;
+            </Link>
+          )}
         </Card>
         <Card>
           <h3 className="text-sm text-slate-500">Pesanan Masuk</h3>

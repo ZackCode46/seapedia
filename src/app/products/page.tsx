@@ -1,23 +1,41 @@
 import Link from "next/link";
 import Card from "@/components/ui/Card";
+import { prisma } from "@/lib/prisma";
 import { dummyProducts } from "@/lib/dummyData";
 
-export default function ProductsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProductsPage() {
+  const realProducts = await prisma.product.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    include: { store: { select: { name: true } } },
+  });
+
+  const usingDummy = realProducts.length === 0;
+  const items = usingDummy
+    ? dummyProducts.map((p) => ({ ...p, store: { name: p.storeName } }))
+    : realProducts;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-2xl font-bold text-slate-900">Katalog Produk</h1>
       <p className="mt-1 text-sm text-slate-600">
         Semua orang, termasuk tamu tanpa akun, bisa melihat katalog dan detail produk ini.
-        Data di bawah masih dummy — akan diganti data toko/produk asli pada Level 2.
+        {usingDummy && " Belum ada produk dari Seller, menampilkan data contoh."}
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {dummyProducts.map((p) => (
+        {items.map((p) => (
           <Link key={p.id} href={`/products/${p.id}`}>
             <Card className="h-full">
-              <img src={p.imageUrl} alt={p.name} className="aspect-square w-full rounded-lg object-cover" />
+              <img
+                src={p.imageUrl || "https://placehold.co/400x400?text=No+Image"}
+                alt={p.name}
+                className="aspect-square w-full rounded-lg object-cover"
+              />
               <h3 className="mt-2 line-clamp-2 text-sm font-medium text-slate-800">{p.name}</h3>
-              <p className="text-xs text-slate-500">{p.storeName}</p>
+              <p className="text-xs text-slate-500">{p.store.name}</p>
               <p className="mt-1 font-semibold text-emerald-700">
                 Rp{p.price.toLocaleString("id-ID")}
               </p>

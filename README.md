@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # SEAPEDIA
 
 Marketplace multi-role (Admin, Seller, Buyer, Driver) — dikerjakan bertahap sesuai
@@ -161,7 +160,3 @@ prisma/
 - **Level 5**: Driver job board, take job, complete job, earnings.
 - **Level 6**: Admin monitoring dashboard, overdue auto refund/return, simulasi waktu.
 - **Level 7**: Hardening keamanan penuh (SQLi/XSS test case, RBAC backend, dokumentasi final).
-=======
-# seapedia
-Soal Seleksi
->>>>>>> df896ded6bef597c29084eff4f4f3b3eaa43f4ae

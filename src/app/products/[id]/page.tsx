@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import { prisma } from "@/lib/prisma";
 import { dummyProducts } from "@/lib/dummyData";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({
   params,
@@ -9,8 +13,35 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = dummyProducts.find((p) => p.id === id);
-  if (!product) return notFound();
+
+  const real = await prisma.product.findUnique({
+    where: { id },
+    include: { store: { select: { id: true, name: true, description: true } } },
+  });
+
+  const dummy = !real ? dummyProducts.find((p) => p.id === id) : null;
+
+  if (!real && !dummy) return notFound();
+
+  const product = real
+    ? {
+        name: real.name,
+        description: real.description ?? "Tidak ada deskripsi.",
+        price: real.price,
+        stock: real.stock,
+        imageUrl: real.imageUrl || "https://placehold.co/400x400?text=No+Image",
+        storeName: real.store.name,
+        storeId: real.store.id as string | null,
+      }
+    : {
+        name: dummy!.name,
+        description: dummy!.description,
+        price: dummy!.price,
+        stock: dummy!.stock,
+        imageUrl: dummy!.imageUrl,
+        storeName: dummy!.storeName,
+        storeId: null,
+      };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -23,7 +54,14 @@ export default async function ProductDetailPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Dijual oleh <span className="font-medium text-emerald-700">{product.storeName}</span>
+            Dijual oleh{" "}
+            {product.storeId ? (
+              <Link href={`/stores/${product.storeId}`} className="font-medium text-emerald-700 hover:underline">
+                {product.storeName}
+              </Link>
+            ) : (
+              <span className="font-medium text-emerald-700">{product.storeName}</span>
+            )}
           </p>
           <p className="mt-4 text-2xl font-bold text-emerald-700">
             Rp{product.price.toLocaleString("id-ID")}
@@ -35,7 +73,7 @@ export default async function ProductDetailPage({
             <p className="mt-1 text-sm text-slate-600">{product.description}</p>
           </Card>
 
-          {/* Checkout intentionally disabled at this level — Buyer flow lands in Level 3. */}
+          {/* Checkout intentionally disabled until Level 3 (Buyer cart/checkout). */}
           <Button disabled fullWidth className="mt-4">
             Tambah ke Keranjang (tersedia setelah login sebagai Buyer)
           </Button>
