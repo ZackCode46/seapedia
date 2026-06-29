@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 const storeSchema = z.object({
   name: z.string().min(3).max(50),
@@ -18,7 +19,15 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten() }, { status: 400 });
   }
-  const { name, description, logoUrl } = parsed.data;
+  // Sanitize free-text fields before storing — defense-in-depth on top of
+  // React's default escaping when these are rendered on store/product pages.
+  const name = sanitizePlainText(parsed.data.name);
+  const description = parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined;
+  const { logoUrl } = parsed.data;
+
+  if (!name) {
+    return NextResponse.json({ error: "Nama toko tidak boleh kosong" }, { status: 400 });
+  }
 
   const existingByName = await prisma.store.findUnique({ where: { name } });
   if (existingByName && existingByName.ownerId !== auth.user.id) {

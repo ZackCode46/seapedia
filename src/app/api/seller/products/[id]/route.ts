@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -37,7 +38,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!parsed.success) {
     return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten() }, { status: 400 });
   }
-  const data = { ...parsed.data, imageUrl: parsed.data.imageUrl || undefined };
+  const data = {
+    ...parsed.data,
+    name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
+    description: parsed.data.description !== undefined ? sanitizePlainText(parsed.data.description) : undefined,
+    imageUrl: parsed.data.imageUrl || undefined,
+  };
 
   const product = await prisma.product.update({ where: { id }, data });
   return NextResponse.json({ message: "Produk berhasil diperbarui", product });

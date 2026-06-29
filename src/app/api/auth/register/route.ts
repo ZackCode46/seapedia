@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
           create: roles.map((r) => ({ role: r as RoleName })),
         },
         wallet: { create: { balance: 0 } },
+        driverProfile: roles.includes("DRIVER") ? { create: { totalEarning: 0 } } : undefined,
       },
       include: { roles: true },
     });

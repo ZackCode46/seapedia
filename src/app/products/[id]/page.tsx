@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
-import Button from "@/components/ui/Button";
+import AddToCartButton from "@/components/layout/AddToCartButton";
 import { prisma } from "@/lib/prisma";
 import { dummyProducts } from "@/lib/dummyData";
 
@@ -73,14 +73,8 @@ export default async function ProductDetailPage({
             <p className="mt-1 text-sm text-slate-600">{product.description}</p>
           </Card>
 
-          {/* Checkout intentionally disabled until Level 3 (Buyer cart/checkout). */}
-          <Button disabled fullWidth className="mt-4">
-            Tambah ke Keranjang (tersedia setelah login sebagai Buyer)
-          </Button>
-          <p className="mt-2 text-xs text-slate-400">
-            Tamu hanya dapat melihat katalog dan detail produk. Login sebagai Buyer untuk
-            berbelanja.
-          </p>
+          {/* Real add-to-cart for Buyer; disabled state handled inside the component. */}
+          <AddToCartButton productId={real ? real.id : id} isDummy={!real} />
         </div>
       </div>
     </div>

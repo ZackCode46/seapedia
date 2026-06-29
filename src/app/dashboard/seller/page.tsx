@@ -23,7 +23,9 @@ export default async function SellerDashboard() {
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/seller/store"><Button variant="outline">Kelola Toko</Button></Link>
-          <Link href="/dashboard/seller/products"><Button>Kelola Produk</Button></Link>
+          <Link href="/dashboard/seller/products"><Button variant="outline">Kelola Produk</Button></Link>
+          <Link href="/dashboard/seller/orders"><Button variant="outline">Pesanan Masuk</Button></Link>
+          <Link href="/dashboard/seller/reports"><Button>Laporan</Button></Link>
         </div>
       </div>
 
@@ -39,14 +41,18 @@ export default async function SellerDashboard() {
             </Link>
           )}
         </Card>
-        <Card>
-          <h3 className="text-sm text-slate-500">Pesanan Masuk</h3>
-          <p className="mt-1 text-sm text-slate-600">Belum tersedia (Level 3)</p>
-        </Card>
-        <Card>
-          <h3 className="text-sm text-slate-500">Pendapatan</h3>
-          <p className="mt-1 text-sm text-slate-600">Belum tersedia (Level 4)</p>
-        </Card>
+        <Link href="/dashboard/seller/orders">
+          <Card>
+            <h3 className="text-sm text-slate-500">Pesanan Masuk</h3>
+            <p className="mt-1 text-sm text-slate-600">Lihat pesanan dari Buyer &rarr;</p>
+          </Card>
+        </Link>
+        <Link href="/dashboard/seller/reports">
+          <Card>
+            <h3 className="text-sm text-slate-500">Pendapatan</h3>
+            <p className="mt-1 text-sm text-emerald-700">Lihat laporan &rarr;</p>
+          </Card>
+        </Link>
       </div>
     </div>
   );

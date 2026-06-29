@@ -1,0 +1,228 @@
+{
+  "info": {
+    "name": "SEAPEDIA API",
+    "description": "API collection for SEAPEDIA marketplace challenge. Auth uses httpOnly cookies (seapedia_token, seapedia_active_role) — Postman will store and send them automatically within the same collection run as long as 'Automatically follow redirects' / cookie jar is enabled (default in Postman). Run requests in the order they appear: Register -> Login -> Select Role -> feature requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Buyer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testbuyer\",\n  \"email\": \"testbuyer@mail.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test Buyer\",\n  \"phone\": \"08123456789\",\n  \"roles\": [\"BUYER\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"buyer1\",\n  \"password\": \"buyer123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Select Active Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/select-role",
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"BUYER\"\n}" }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
+        },
+        {
+          "name": "Logout",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/logout" }
+        }
+      ]
+    },
+    {
+      "name": "Public Reviews",
+      "item": [
+        { "name": "List Reviews", "request": { "method": "GET", "url": "{{baseUrl}}/api/reviews" } },
+        {
+          "name": "Submit Review (Guest OK)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/reviews",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Pengguna Senang\",\n  \"rating\": 5,\n  \"comment\": \"Aplikasinya mudah dipakai!\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seller - Store & Products",
+      "item": [
+        {
+          "name": "Create/Update Store",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/store",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Toko Test\",\n  \"description\": \"Toko untuk testing\"\n}" }
+          }
+        },
+        { "name": "Get My Store", "request": { "method": "GET", "url": "{{baseUrl}}/api/store" } },
+        { "name": "Get Store Detail (Public)", "request": { "method": "GET", "url": "{{baseUrl}}/api/stores/STORE_ID" } },
+        { "name": "List My Products", "request": { "method": "GET", "url": "{{baseUrl}}/api/seller/products" } },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/seller/products",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Produk Test\",\n  \"description\": \"Deskripsi\",\n  \"price\": 50000,\n  \"stock\": 20\n}" }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/seller/products/PRODUCT_ID",
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 55000,\n  \"stock\": 15\n}" }
+          }
+        },
+        { "name": "Delete Product", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/seller/products/PRODUCT_ID" } },
+        { "name": "List Public Products", "request": { "method": "GET", "url": "{{baseUrl}}/api/products" } },
+        { "name": "Get Public Product Detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/products/PRODUCT_ID" } }
+      ]
+    },
+    {
+      "name": "Buyer - Wallet, Address, Cart, Checkout",
+      "item": [
+        { "name": "Get Wallet + History", "request": { "method": "GET", "url": "{{baseUrl}}/api/wallet" } },
+        {
+          "name": "Top-up Wallet (Dummy)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/wallet",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 500000\n}" }
+          }
+        },
+        { "name": "List Addresses", "request": { "method": "GET", "url": "{{baseUrl}}/api/addresses" } },
+        {
+          "name": "Add Address",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/addresses",
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Rumah\",\n  \"recipient\": \"Test Buyer\",\n  \"phone\": \"08123456789\",\n  \"fullAddress\": \"Jl. Testing No.1\",\n  \"city\": \"Depok\",\n  \"isDefault\": true\n}" }
+          }
+        },
+        { "name": "Get Cart", "request": { "method": "GET", "url": "{{baseUrl}}/api/cart" } },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/cart",
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": \"PRODUCT_ID\",\n  \"quantity\": 2\n}" }
+          }
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/cart/items/CART_ITEM_ID",
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 3\n}" }
+          }
+        },
+        { "name": "Remove Cart Item", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/cart/items/CART_ITEM_ID" } },
+        { "name": "Clear Cart", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/cart" } },
+        {
+          "name": "Validate Voucher",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/discounts/validate-voucher",
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"DISKON10\",\n  \"subtotal\": 150000\n}" }
+          }
+        },
+        { "name": "List Active Promos", "request": { "method": "GET", "url": "{{baseUrl}}/api/discounts/promos" } },
+        {
+          "name": "Checkout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/checkout",
+            "body": { "mode": "raw", "raw": "{\n  \"addressId\": \"ADDRESS_ID\",\n  \"deliveryMethod\": \"REGULAR\",\n  \"voucherCode\": \"DISKON10\"\n}" }
+          }
+        },
+        { "name": "Order History", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders" } },
+        { "name": "Order Detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/orders/ORDER_ID" } },
+        { "name": "Buyer Spending Report", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/buyer" } }
+      ]
+    },
+    {
+      "name": "Seller - Order Processing & Reports",
+      "item": [
+        { "name": "Incoming Orders", "request": { "method": "GET", "url": "{{baseUrl}}/api/seller/orders" } },
+        { "name": "Process Order (-> Menunggu Pengirim)", "request": { "method": "POST", "url": "{{baseUrl}}/api/seller/orders/ORDER_ID/process" } },
+        { "name": "Seller Income Report", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/seller" } }
+      ]
+    },
+    {
+      "name": "Driver - Delivery Jobs",
+      "item": [
+        { "name": "Find Available Jobs", "request": { "method": "GET", "url": "{{baseUrl}}/api/driver/jobs" } },
+        { "name": "Job Detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/driver/jobs/JOB_ID" } },
+        { "name": "Take Job", "request": { "method": "POST", "url": "{{baseUrl}}/api/driver/jobs/JOB_ID/take" } },
+        { "name": "Complete Job", "request": { "method": "POST", "url": "{{baseUrl}}/api/driver/jobs/JOB_ID/complete" } },
+        { "name": "Job History + Earnings", "request": { "method": "GET", "url": "{{baseUrl}}/api/driver/history" } }
+      ]
+    },
+    {
+      "name": "Admin - Discounts, Monitoring, Overdue",
+      "item": [
+        { "name": "List Vouchers", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/vouchers" } },
+        {
+          "name": "Create Voucher",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admin/vouchers",
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"TESTVOUCHER\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 15,\n  \"maxDiscount\": 25000,\n  \"expiresAt\": \"2026-12-31T00:00:00.000Z\",\n  \"usageLimit\": 50\n}" }
+          }
+        },
+        { "name": "Voucher Detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/vouchers/VOUCHER_ID" } },
+        { "name": "List Promos", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/promos" } },
+        {
+          "name": "Create Promo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admin/promos",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Promo Test\",\n  \"discountType\": \"FLAT\",\n  \"discountValue\": 10000,\n  \"expiresAt\": \"2026-12-31T00:00:00.000Z\"\n}" }
+          }
+        },
+        { "name": "Promo Detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/promos/PROMO_ID" } },
+        { "name": "Monitoring Stats", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/monitoring" } },
+        { "name": "Get System Clock", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/system-clock" } },
+        { "name": "Advance System Clock 1 Day", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/system-clock/advance-day" } },
+        { "name": "Run Overdue Auto-Refund Job", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/overdue/run" } }
+      ]
+    }
+  ]
+}

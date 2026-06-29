@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 const productSchema = z.object({
   name: z.string().min(1).max(100),
@@ -40,7 +41,13 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten() }, { status: 400 });
   }
-  const { name, description, price, stock, imageUrl } = parsed.data;
+  const name = sanitizePlainText(parsed.data.name);
+  const description = parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined;
+  const { price, stock, imageUrl } = parsed.data;
+
+  if (!name) {
+    return NextResponse.json({ error: "Nama produk tidak boleh kosong" }, { status: 400 });
+  }
 
   const product = await prisma.product.create({
     data: { storeId: store.id, name, description, price, stock, imageUrl: imageUrl || null },
