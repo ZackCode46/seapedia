@@ -7,9 +7,14 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 function buildClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 20000,
+    idleTimeoutMillis: 60000,
     max: 10,
+  });
+  pool.on("error", (err) => {
+    // Prevents an idle-client connection error from crashing the whole process;
+    // Prisma will simply open a new connection on the next query.
+    console.error("Unexpected PG pool error (non-fatal):", err.message);
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({

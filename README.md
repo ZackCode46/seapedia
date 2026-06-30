@@ -59,6 +59,23 @@ npm approve-scripts --allow-scripts-pending
 ```
 lalu ulangi `npm install`.
 
+## Deploy ke Vercel
+
+- `package.json` punya script `postinstall: prisma generate`, jadi Prisma Client
+  selalu ter-generate ulang otomatis setiap kali Vercel install dependency —
+  tidak perlu langkah manual tambahan untuk ini.
+- `tsconfig.json` mengecualikan folder `prisma/` dari typecheck Next.js
+  (`prisma/seed.ts` dijalankan terpisah lewat `ts-node`, bukan bagian dari bundle
+  aplikasi, jadi tidak perlu ikut di-typecheck saat `next build`).
+- **Wajib** set environment variable `DATABASE_URL` dan `JWT_SECRET` di pengaturan
+  project Vercel (Settings → Environment Variables) — gunakan connection string dari
+  database cloud (misal Neon, Supabase, atau Vercel Postgres), karena PostgreSQL
+  lokal di laptop tidak bisa diakses dari internet.
+- Setelah set environment variable, jalankan migrasi ke database production sekali
+  dari lokal (ganti `DATABASE_URL` di `.env` lokal ke connection string production
+  sementara): `npx prisma migrate deploy` lalu `npm run db:seed` kalau mau ada akun
+  demo juga di production.
+
 ## Setup
 
 1. Install dependency:
